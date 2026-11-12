@@ -1,0 +1,30 @@
+clusterName: eks-lab
+region: us-east-1
+
+# The VPC ID changes every session (ephemeral lab), so find the VPC by its
+# Name tag instead of hard-coding an ID. Nodes enforce IMDSv2 with hop limit
+# 1, so the controller can't discover the VPC from instance metadata.
+vpcTags:
+  Name: eks-lab
+
+replicaCount: 2
+
+# Must match the Pod Identity association in Terraform (modules/platform-iam)
+serviceAccount:
+  create: true
+  name: aws-load-balancer-controller
+
+# The Service mutator webhook makes the controller handle every new
+# LoadBalancer Service and fails Service creation cluster-wide if the
+# controller is down. Ingress -> ALB is all this lab needs.
+enableServiceMutatorWebhook: false
+
+nodeSelector:
+  node-role: system
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    memory: 256Mi

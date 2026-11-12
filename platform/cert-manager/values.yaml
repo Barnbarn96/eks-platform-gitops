@@ -1,0 +1,15 @@
+crds:
+  enabled: true
+  # Keep Certificates etc. if the app is ever deleted; removing the CRDs
+  # would delete every certificate in the cluster with them
+  keep: true
+
+# ClusterIssuers (Let's Encrypt staging -> prod, Route 53 DNS-01) and the
+# Pod Identity role for Route 53 are added once the domain exists.
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 64Mi
+  limits:
+    memory: 256Mi

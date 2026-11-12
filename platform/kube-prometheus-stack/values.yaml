@@ -1,0 +1,51 @@
+# Phase 2: get it running. Phase 4 adds dashboards, alert rules and routing.
+
+# EKS runs these on the AWS-managed control plane, so they can't be scraped.
+# Leaving them on just produces "target down" alerts.
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeEtcd:
+  enabled: false
+# kube-proxy on EKS binds its metrics port to 127.0.0.1; same problem
+kubeProxy:
+  enabled: false
+
+prometheus:
+  prometheusSpec:
+    # Ephemeral lab: no PersistentVolume (avoids EBS leaks and AZ pinning),
+    # and data only needs to last one session
+    retention: 1d
+    # Pick up every ServiceMonitor/PodMonitor/PrometheusRule in the cluster,
+    # not just ones labelled for this Helm release (the demo app's, later)
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        memory: 1Gi
+
+alertmanager:
+  alertmanagerSpec:
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        memory: 128Mi
+
+grafana:
+  # Not exposed: kubectl -n monitoring port-forward svc/kube-prometheus-stack-grafana 3000:80
+  # Default login is admin / prom-operator. Move to an ExternalSecret in Phase 4.
+  persistence:
+    enabled: false
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 256Mi

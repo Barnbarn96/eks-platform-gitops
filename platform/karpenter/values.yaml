@@ -1,0 +1,28 @@
+settings:
+  clusterName: eks-lab
+  # SQS queue fed by EventBridge (spot interruptions, rebalance, health
+  # events). Created by Terraform: modules/platform-iam
+  interruptionQueue: eks-lab-karpenter
+
+# Must match the Pod Identity association in Terraform (modules/platform-iam)
+serviceAccount:
+  name: karpenter
+
+replicas: 2
+
+# Karpenter must never run on nodes it manages (the chart's default affinity
+# already excludes them); pin it to the managed system node group
+nodeSelector:
+  node-role: system
+
+# Use the node's resolver, not CoreDNS. If CoreDNS ever needs Karpenter
+# capacity to schedule, Karpenter can't depend on CoreDNS to start.
+dnsPolicy: Default
+
+controller:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 512Mi

@@ -1,0 +1,39 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: aws-load-balancer-controller
+  namespace: argocd
+  annotations:
+    # Early: its webhooks intercept Services/Ingresses/TargetGroupBindings,
+    # so it must be running before anything creates those
+    argocd.argoproj.io/sync-wave: "-2"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    - repoURL: https://aws.github.io/eks-charts
+      chart: aws-load-balancer-controller
+      targetRevision: 3.6.0
+      helm:
+        releaseName: aws-load-balancer-controller
+        valueFiles:
+          - $values/platform/aws-load-balancer-controller/values.yaml
+    - repoURL: https://github.com/Barnbarn96/eks-platform-gitops.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m

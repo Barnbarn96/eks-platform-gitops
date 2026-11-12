@@ -1,0 +1,42 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: karpenter
+  namespace: argocd
+  annotations:
+    # Controller + CRDs first; its NodePool/EC2NodeClass come in wave -1
+    argocd.argoproj.io/sync-wave: "-2"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    # OCI chart on public ECR; ArgoCD has this registered as an OCI helm repo
+    # (see configs.repositories in the argocd-bootstrap Terraform module)
+    - repoURL: public.ecr.aws/karpenter
+      chart: karpenter
+      # 1.14.x supports Kubernetes up to 1.36. Check the compatibility matrix
+      # before the Phase 5 upgrade to 1.37.
+      targetRevision: 1.14.1
+      helm:
+        releaseName: karpenter
+        valueFiles:
+          - $values/platform/karpenter/values.yaml
+    - repoURL: https://github.com/Barnbarn96/eks-platform-gitops.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m

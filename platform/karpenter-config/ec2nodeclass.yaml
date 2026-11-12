@@ -1,0 +1,28 @@
+apiVersion: karpenter.k8s.aws/v1
+kind: EC2NodeClass
+metadata:
+  name: default
+spec:
+  # Node IAM role created by Terraform (modules/platform-iam). Karpenter
+  # creates an instance profile for it, named <cluster>_<hash>.
+  role: eks-lab-karpenter-node
+
+  # @latest follows the newest EKS-optimized AL2023 AMI for the cluster's
+  # Kubernetes version. When the AMI changes (new release, or a control plane
+  # upgrade) Karpenter marks nodes as drifted and replaces them; that's the
+  # Phase 5 upgrade behaviour. Production usually pins a version, e.g.
+  # al2023@v20261001, and bumps it deliberately.
+  amiSelectorTerms:
+    - alias: al2023@latest
+
+  # Same discovery tags Terraform puts on the private subnets and node SG
+  subnetSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: eks-lab
+  securityGroupSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: eks-lab
+
+  # For cost tracking and leak-check.sh
+  tags:
+    project: eks-lab
