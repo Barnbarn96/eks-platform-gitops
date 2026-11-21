@@ -17,6 +17,12 @@ prometheus:
     # Ephemeral lab: no PersistentVolume (avoids EBS leaks and AZ pinning),
     # and data only needs to last one session
     retention: 1d
+    nodeSelector:
+      node-role: system
+    tolerations:
+      - key: CriticalAddonsOnly
+        operator: Exists
+        effect: NoSchedule
     # Pick up every ServiceMonitor/PodMonitor/PrometheusRule in the cluster,
     # not just ones labelled for this Helm release (the demo app's, later)
     serviceMonitorSelectorNilUsesHelmValues: false
@@ -31,6 +37,12 @@ prometheus:
 
 alertmanager:
   alertmanagerSpec:
+    nodeSelector:
+      node-role: system
+    tolerations:
+      - key: CriticalAddonsOnly
+        operator: Exists
+        effect: NoSchedule
     resources:
       requests:
         cpu: 10m
@@ -39,6 +51,12 @@ alertmanager:
         memory: 128Mi
 
 grafana:
+  nodeSelector:
+    node-role: system
+  tolerations:
+    - key: CriticalAddonsOnly
+      operator: Exists
+      effect: NoSchedule
   # Not exposed: kubectl -n monitoring port-forward svc/kube-prometheus-stack-grafana 3000:80
   # Default login is admin / prom-operator. Move to an ExternalSecret in Phase 4.
   persistence:
@@ -49,3 +67,37 @@ grafana:
       memory: 128Mi
     limits:
       memory: 256Mi
+
+# Monitoring stays on the system nodes, next to the other platform pods: it
+# must survive the spot interruptions and node-loss drills it is meant to
+# observe. System nodes are tainted CriticalAddonsOnly=true:NoSchedule
+# (Terraform: modules/cluster).
+prometheusOperator:
+  nodeSelector:
+    node-role: system
+  tolerations:
+    - key: CriticalAddonsOnly
+      operator: Exists
+      effect: NoSchedule
+  admissionWebhooks:
+    patch:
+      nodeSelector:
+        node-role: system
+      tolerations:
+        - key: CriticalAddonsOnly
+          operator: Exists
+          effect: NoSchedule
+
+kube-state-metrics:
+  nodeSelector:
+    node-role: system
+  tolerations:
+    - key: CriticalAddonsOnly
+      operator: Exists
+      effect: NoSchedule
+
+# DaemonSet: must run on EVERY node (system and Karpenter), so tolerate any
+# taint and select nothing
+prometheus-node-exporter:
+  tolerations:
+    - operator: Exists

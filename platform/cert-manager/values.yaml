@@ -13,3 +13,36 @@ resources:
     memory: 64Mi
   limits:
     memory: 256Mi
+
+# System nodes are tainted CriticalAddonsOnly=true:NoSchedule (Terraform:
+# modules/cluster). Platform pods tolerate it and select node-role=system.
+nodeSelector:
+  node-role: system
+tolerations:
+  - key: CriticalAddonsOnly
+    operator: Exists
+    effect: NoSchedule
+
+webhook:
+  nodeSelector:
+    node-role: system
+  tolerations:
+    - key: CriticalAddonsOnly
+      operator: Exists
+      effect: NoSchedule
+
+cainjector:
+  nodeSelector:
+    node-role: system
+  tolerations:
+    - key: CriticalAddonsOnly
+      operator: Exists
+      effect: NoSchedule
+
+startupapicheck:
+  nodeSelector:
+    node-role: system
+  tolerations:
+    - key: CriticalAddonsOnly
+      operator: Exists
+      effect: NoSchedule

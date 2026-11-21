@@ -14,6 +14,11 @@ replicas: 2
 # already excludes them); pin it to the managed system node group
 nodeSelector:
   node-role: system
+# System nodes are tainted CriticalAddonsOnly=true:NoSchedule (modules/cluster)
+tolerations:
+  - key: CriticalAddonsOnly
+    operator: Exists
+    effect: NoSchedule
 
 # Use the node's resolver, not CoreDNS. If CoreDNS ever needs Karpenter
 # capacity to schedule, Karpenter can't depend on CoreDNS to start.
