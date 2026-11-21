@@ -48,6 +48,17 @@ Names that must match `eks-platform-infra/modules/platform-iam`:
 | LB controller | `kube-system/aws-load-balancer-controller` | Pod Identity role |
 | External Secrets | `external-secrets/external-secrets` | Pod Identity role, reads `eks-lab/*` |
 
+Node placement, which must match `eks-platform-infra/modules/cluster` (system node group):
+
+| Infra side | Gitops side |
+|---|---|
+| Label `node-role=system` | Every platform add-on sets `nodeSelector: {node-role: system}` |
+| Taint `CriticalAddonsOnly=true:NoSchedule` | Every platform add-on (and each sub-component: webhooks, cainjector, jobs) tolerates it. node-exporter tolerates everything. |
+
+Change order: an add-on that loses its toleration while the taint exists can't
+schedule on the system nodes and spills onto Karpenter capacity. Add
+tolerations here first, then change the taint in infra.
+
 ## Access
 
 ```bash
